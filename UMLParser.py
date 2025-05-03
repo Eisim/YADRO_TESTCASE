@@ -83,8 +83,8 @@ class UMLParser(BaseModel):
         super().__init__(*args, **kvargs)
         self.structure = UMLStructure([], [])
         self.__parse()
-        self.to_dict()
-
+        _ = self.to_dict()
+        self.save_json(_,'test')
     def __collect_attributes(self, xml_element, obj_type):
         attr_data = {}
         for attr_name, attr_type in obj_type.get_field_info():
@@ -102,20 +102,13 @@ class UMLParser(BaseModel):
     def __parse(self) -> None:
         tree = ET.parse(self.path_to_model)
         root = tree.getroot()
-
         # FIXME: for ... for .. for ... -> recursive alg
-        for obj_name, list_type in self.structure.get_field_info():
-            if get_origin(list_type) in [list, tuple]:
-                for obj_type in get_args(list_type):
-                    obj_type_class_name = obj_type.get_class_name()
-                    for xml_element in root.findall(obj_type_class_name):
-                        cur_obj = self.__collect_attributes(xml_element, obj_type)
-                        self.structure[obj_name].append(obj_type(**cur_obj))
+        self.structure = UMLStructure(**self.__collect_attributes(root, self.structure))
 
     def to_dict(self) -> Dict:
         return self.structure.to_dict()
 
     def save_json(self, dict_data, name):
-        file_name = name if name.split('.')[1] == 'json' else name + '.json'
+        file_name = name if len(name.split('.'))==2 and name.split('.')[1] == 'json' else name + '.json'
         with open(file_name, 'w') as f:
             json.dump(self.structure.to_dict(), f, ensure_ascii=False, indent=4)
