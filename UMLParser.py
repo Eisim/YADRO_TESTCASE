@@ -18,6 +18,9 @@ class BaseDataClass:
     def get_class_name(cls):
         return cls.__name__
 
+    def items(self):
+        for field in fields(self):
+            yield field.name, getattr(self, field.name)
     def __getitem__(self, key):
         return getattr(self, key)
 
@@ -25,7 +28,6 @@ class BaseDataClass:
         setattr(self, key, value)
 
     def to_dict(self) -> Dict[str, Any]:
-        """Рекурсивно преобразует объект dataclass в словарь"""
         if not is_dataclass(self):
             return self
 
@@ -33,7 +35,6 @@ class BaseDataClass:
         for field in fields(self):
             value = getattr(self, field.name)
 
-            # Рекурсивная обработка вложенных объектов
             if is_dataclass(value):
                 result[field.name] = value.to_dict()
             elif isinstance(value, list):
@@ -77,6 +78,11 @@ class UMLStructure(BaseDataClass):
     Classes: List[Class]
     Aggregations: List[Aggregation]
 
+UMLRENAME_RULE = {
+    'name': 'Class',
+    'Attribute': 'parameters'
+}
+
 
 class UMLParser(BaseModel):
     def __init__(self, *args, **kvargs):
@@ -100,15 +106,19 @@ class UMLParser(BaseModel):
         return attr_data
 
     def __parse(self) -> None:
-        tree = ET.parse(self.path_to_model)
+        tree = ET.parse(self.path_to_data)
         root = tree.getroot()
-        # FIXME: for ... for .. for ... -> recursive alg
         self.structure = UMLStructure(**self.__collect_attributes(root, self.structure))
 
     def to_dict(self) -> Dict:
         return self.structure.to_dict()
 
-    def save_json(self, dict_data, name):
-        file_name = name if len(name.split('.'))==2 and name.split('.')[1] == 'json' else name + '.json'
-        with open(file_name, 'w') as f:
-            json.dump(self.structure.to_dict(), f, ensure_ascii=False, indent=4)
+    #FIXME: make it more universal
+    def dict_to_task_format(self, input_data):
+        aggregations = {}
+        for agg in input_data['Aggregations']:
+
+            aggregations.setdefault(agg['target'],[]).append(agg['source'])
+        pass
+
+
