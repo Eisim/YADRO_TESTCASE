@@ -94,10 +94,7 @@ UMLRENAME_RULE = {
 class UMLParser(BaseModel):
     def __init__(self, *args, **kvargs):
         super().__init__(*args, **kvargs)
-        self.structure = UMLStructure([], [])
-        self.__parse()
-        _ = self.to_dict()
-        self.save_json(_, 'test')
+        self.structure = self.__parse(self.path_to_data)
 
     def __collect_attributes(self, xml_element, obj_type):
         attr_data = {}
@@ -114,15 +111,15 @@ class UMLParser(BaseModel):
                 attr_data[attr_name] = xml_element.get(attr_name)
         return attr_data
 
-    def __parse(self) -> None:
-        tree = ET.parse(self.path_to_data)
+    def __parse(self, path_to_data) -> None:
+        tree = ET.parse(path_to_data)
         root = tree.getroot()
-        self.structure = UMLStructure(**self.__collect_attributes(root, self.structure))
+        structure = UMLStructure(**self.__collect_attributes(root, UMLStructure))
+        return structure
 
     def to_dict(self) -> Dict:
         return self.structure.to_dict()
 
-    # FIXME: make it more universal and faster(use hash table[dict] to fast search)
     def dict_to_meta_json_format(self, input_data):
         meta_data = []
 
@@ -158,7 +155,7 @@ class UMLParser(BaseModel):
                 data_attrs = self.structure.get_class_by_name(name)
                 add_additional_info(elem, data_attrs)
 
-                if children:  # Если есть вложенные элементы
+                if children:
                     self.__dict_to_xml(children, elem)
     def __build_hierarchy(self, graph, root):
         hierarchy = {root: {}}
@@ -166,7 +163,7 @@ class UMLParser(BaseModel):
         while queue:
             current_node, current_dict = queue.popleft()
             for child in graph.get(current_node, []):
-                current_dict[child] = {}  # Добавляем ребенка
+                current_dict[child] = {}
                 queue.append((child, current_dict[child]))
         return hierarchy
 
