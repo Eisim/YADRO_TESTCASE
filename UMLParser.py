@@ -1,8 +1,10 @@
 import xml.etree.ElementTree as ET
-import json
+
+from collections import deque, defaultdict
 
 from dataclasses import dataclass, fields, is_dataclass
 from typing import Dict, List, get_args, get_origin, Any
+
 
 from BaseModel import BaseModel
 from settings import COLLECTION_TYPES
@@ -79,6 +81,9 @@ class UMLStructure(BaseDataClass):
     Classes: List[Class]
     Aggregations: List[Aggregation]
 
+    def get_class_by_name(self, name):
+        return next((cls for cls in self.Classes if cls.name == name), None)
+
 
 UMLRENAME_RULE = {
     'name': 'Class',
@@ -101,7 +106,8 @@ class UMLParser(BaseModel):
                 obj_collection = []
                 for collection_type in get_args(attr_type):
                     collection_type_name = collection_type.get_class_name()
-                    obj_collection += [self.__collect_attributes(xml_child, collection_type) for xml_child in
+                    obj_collection += [collection_type(**self.__collect_attributes(xml_child, collection_type)) for
+                                       xml_child in
                                        xml_element.findall(collection_type_name)]
                 attr_data[attr_name] = obj_collection
             else:
@@ -125,10 +131,50 @@ class UMLParser(BaseModel):
             meta_dict['parameters'] = meta_dict.pop('attribute')
             meta_dict['parameters'] += [{'name': attr_name['source'], 'type': 'class'} for attr_name in
                                         input_data['Aggregations'] if attr_name['target'] == cls['name']]
-            multiplicity_arr = [x['sourceMultiplicity'] for x in input_data['Aggregations'] if x['source']==cls['name']]
-            if len(multiplicity_arr)!=0:
+            multiplicity_arr = [x['sourceMultiplicity'] for x in input_data['Aggregations'] if
+                                x['source'] == cls['name']]
+            if len(multiplicity_arr) != 0:
                 meta_dict['min'] = min([x.split('..')[0] for x in multiplicity_arr])
                 meta_dict['max'] = max([x.split('..')[-1] for x in multiplicity_arr])
 
             meta_data.append(meta_dict)
         return meta_data
+
+    def __dict_to_xml(self, data, parent=None):
+        def add_additional_info(xml_elem, data):
+            for attr_list in data.attribute:
+                elem_attrs = ET.SubElement(xml_elem, attr_list.name)
+                elem_attrs.text = attr_list.type
+        if parent is None:
+            root_name = list(data.keys())[0]
+            root = ET.Element(root_name)
+            data_attrs = self.structure.get_class_by_name(root_name)
+            add_additional_info(root, data_attrs)
+            self.__dict_to_xml(data[root_name], root)
+            return root
+        else:
+            for name, children in data.items():
+                elem = ET.SubElement(parent, name)
+                data_attrs = self.structure.get_class_by_name(name)
+                add_additional_info(elem, data_attrs)
+
+                if children:  # Если есть вложенные элементы
+                    self.__dict_to_xml(children, elem)
+    def __build_hierarchy(self, graph, root):
+        hierarchy = {root: {}}
+        queue = deque([(root, hierarchy[root])])
+        while queue:
+            current_node, current_dict = queue.popleft()
+            for child in graph.get(current_node, []):
+                current_dict[child] = {}  # Добавляем ребенка
+                queue.append((child, current_dict[child]))
+        return hierarchy
+
+    def struct_to_config_xml(self):
+        root_class = next((cls for cls in self.structure.Classes if cls.isRoot), None)
+        graph = defaultdict(list)
+        for aggr in self.structure.Aggregations:
+            graph[aggr.target].append(aggr.source)
+        hierarchy = self.__build_hierarchy(graph, root_class.name)
+        xml_root = self.__dict_to_xml(hierarchy)
+        return xml_root
