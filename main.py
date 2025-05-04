@@ -24,11 +24,15 @@ if __name__ == '__main__':
     raw_data = xml_model.to_dict()
     meta_json_data = xml_model.dict_to_meta_json_format(raw_data)
     cfg_xml_data = xml_model.struct_to_config_xml()
+
     xml_model.save_json(meta_json_data, os.path.join(output_dir, meta_json))
     xml_model.save_xml(cfg_xml_data, os.path.join(output_dir, cfg_xml))
 
-    cfg_parser = ConfigParser(path_to_data=os.path.join(input_dir, cfg_json),
-                              path_to_patched_data=os.path.join(input_dir, patched_cfg_json))
+    cfg_parser = ConfigParser(os.path.join(input_dir, cfg_json))
 
-    cfg_parser.save_json(cfg_parser.diff_struct, os.path.join(output_dir, delta_json))
-    cfg_parser.save_json(cfg_parser.new_struct, os.path.join(output_dir, res_patched_cfg_json))
+    new_cfg_struct = cfg_parser.read_json(os.path.join(input_dir, patched_cfg_json))
+    diff_struct = cfg_parser.compare(new_cfg_struct)
+    new_cfg_struct_by_diff = cfg_parser.delta_applying(diff_struct)
+
+    cfg_parser.save_json(diff_struct, os.path.join(output_dir, delta_json))
+    cfg_parser.save_json(new_cfg_struct_by_diff, os.path.join(output_dir, res_patched_cfg_json))
