@@ -21,6 +21,7 @@ class BaseDataClass:
     def items(self):
         for field in fields(self):
             yield field.name, getattr(self, field.name)
+
     def __getitem__(self, key):
         return getattr(self, key)
 
@@ -78,6 +79,7 @@ class UMLStructure(BaseDataClass):
     Classes: List[Class]
     Aggregations: List[Aggregation]
 
+
 UMLRENAME_RULE = {
     'name': 'Class',
     'Attribute': 'parameters'
@@ -90,7 +92,8 @@ class UMLParser(BaseModel):
         self.structure = UMLStructure([], [])
         self.__parse()
         _ = self.to_dict()
-        self.save_json(_,'test')
+        self.save_json(_, 'test')
+
     def __collect_attributes(self, xml_element, obj_type):
         attr_data = {}
         for attr_name, attr_type in obj_type.get_field_info():
@@ -113,12 +116,19 @@ class UMLParser(BaseModel):
     def to_dict(self) -> Dict:
         return self.structure.to_dict()
 
-    #FIXME: make it more universal
-    def dict_to_task_format(self, input_data):
-        aggregations = {}
-        for agg in input_data['Aggregations']:
+    # FIXME: make it more universal and faster(use hash table[dict] to fast search)
+    def dict_to_meta_json_format(self, input_data):
+        meta_data = []
 
-            aggregations.setdefault(agg['target'],[]).append(agg['source'])
-        pass
+        for cls in input_data['Classes']:
+            meta_dict = cls
+            meta_dict['parameters'] = meta_dict.pop('attribute')
+            meta_dict['parameters'] += [{'name': attr_name['source'], 'type': 'class'} for attr_name in
+                                        input_data['Aggregations'] if attr_name['target'] == cls['name']]
+            multiplicity_arr = [x['sourceMultiplicity'] for x in input_data['Aggregations'] if x['source']==cls['name']]
+            if len(multiplicity_arr)!=0:
+                meta_dict['min'] = min([x.split('..')[0] for x in multiplicity_arr])
+                meta_dict['max'] = max([x.split('..')[-1] for x in multiplicity_arr])
 
-
+            meta_data.append(meta_dict)
+        return meta_data
