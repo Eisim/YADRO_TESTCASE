@@ -34,7 +34,7 @@ class ConfigModel(BaseModel):
         }
 
     @staticmethod
-    def apply_delta_to_config(base_config, delta_dict):
+    def apply_delta_to_config(base_config: Dict[AnyStr, Any], delta_dict: Dict[AnyStr, Any]) -> Dict[AnyStr, Any]:
         new_dict = base_config.copy()
         for key in delta_dict.get('deletions', []):
             new_dict.pop(key, None)

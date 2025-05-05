@@ -1,5 +1,5 @@
 import xml.etree.ElementTree as ET
-from typing import get_origin, get_args, AnyStr
+from typing import get_origin, get_args, AnyStr, Any, Dict, Type
 
 from DataModels.UMLDataClassModel import UMLDataClass
 from FileReaders.BaseFileReader import BaseFileReader
@@ -8,7 +8,7 @@ from settings import COLLECTION_TYPES
 
 class UMLReaderClass(BaseFileReader):
     @classmethod
-    def __collect_attributes(cls, xml_element, obj_type):
+    def __collect_attributes(cls, xml_element: ET.Element, obj_type: Type[UMLDataClass]) -> Dict[AnyStr, Any]:
         attr_data = {}
         for attr_name, attr_type in obj_type.get_field_info():
             if get_origin(attr_type) in COLLECTION_TYPES:
@@ -23,7 +23,7 @@ class UMLReaderClass(BaseFileReader):
                 attr_data[attr_name] = xml_element.get(attr_name)
         return attr_data
 
-    def read(self, path: AnyStr):
+    def read(self, path: AnyStr) -> UMLDataClass:
         tree = ET.parse(path)
         root = tree.getroot()
         content = UMLDataClass(**self.__collect_attributes(root, UMLDataClass))

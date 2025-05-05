@@ -13,6 +13,7 @@ class App:
     @staticmethod
     def run():
         uml_model_data = UMLReaderClass().read(os.path.join(INPUT_DIR, IMP_TEST_XML))
+        BaseSaveClass.save_json(uml_model_data.to_dict(), 'test')
         json_meta_data = MetaModel().to_format(uml_model_data)
         xml_config_data = XMLConfigModel().to_format(uml_model_data)
 

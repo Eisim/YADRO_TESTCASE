@@ -17,7 +17,7 @@ class XMLConfigModel(BaseModel):
                 queue.append((child, current_dict[child]))
         return hierarchy
 
-    def __dict_to_xml(self, content, data: Dict[str, Any], parent=None):
+    def __dict_to_xml(self, content, data: Dict[str, Any], parent=None) -> ET.Element:
         def add_additional_info(xml_elem: ET.Element, class_data: UMLDataClassModel.Class):
             for attr_list in class_data.attribute:
                 elem_attrs = ET.SubElement(xml_elem, attr_list.name)
@@ -39,7 +39,7 @@ class XMLConfigModel(BaseModel):
                 if children:
                     self.__dict_to_xml(content, children, elem)
 
-    def to_format(self, content: UMLDataClassModel.UMLDataClass):
+    def to_format(self, content: UMLDataClassModel.UMLDataClass) -> ET.Element:
         root_class = next((cls for cls in content.Classes if cls.isRoot), None)
         graph = defaultdict(list)
         for aggr in content.Aggregations:

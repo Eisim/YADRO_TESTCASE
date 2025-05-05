@@ -1,15 +1,14 @@
+from typing import Dict, List
+
 from DataModels import UMLDataClassModel
 from DataModels.BaseModel import BaseModel
-
-
 
 
 class MetaModel(BaseModel):
     def __init__(self, *args, **kvargs):
         super().__init__(*args, **kvargs)
 
-    
-    def to_format(self, content: UMLDataClassModel.UMLDataClass):
+    def to_format(self, content: UMLDataClassModel.UMLDataClass) -> List[Dict]:
         content = content.to_dict()
         meta_data = []
 
