@@ -1,36 +1,31 @@
-from BaseModel import BaseModel
 import json
+from typing import Dict, Any, AnyStr
+
+from DataModels.BaseModel import BaseModel
 
 
-class ConfigParser(BaseModel):
-    def __init__(self, *args, **kvargs):
-        super().__init__(*args, **kvargs)
-        with open(self.path_to_data, 'r') as f:
-            self.old_struct = json.load(f)
-    def read_json(self, path_to_json):
-        with open(path_to_json, 'r') as f:
-            new_json = json.load(f)
-        return new_json
-    def compare(self, new_struct):
+class ConfigModel(BaseModel):
+    @staticmethod
+    def compare_cfg(old_config: Dict[AnyStr, Any], new_config: Dict[Any, AnyStr]) -> Dict[AnyStr, Any]:
         additions = []
         deletions = []
         updates = []
-        new_keys = set(new_struct.keys())
-        for k, v in self.old_struct.items():
-            if k not in new_struct:
+        new_keys = set(new_config.keys())
+        for k, v in old_config.items():
+            if k not in new_config:
                 deletions.append(k)
-            elif k in new_struct and v != new_struct[k]:
+            elif k in new_config and v != new_config[k]:
                 updates.append({
                     "key": k,
                     "from": v,
-                    "to": new_struct[k]
+                    "to": new_config[k]
                 })
-            if k in new_struct:
+            if k in new_config:
                 new_keys.remove(k)
         for k in new_keys:
             additions.append({
                 "key": k,
-                "value": new_struct[k]
+                "value": new_config[k]
             })
         return {
             "additions": additions,
@@ -38,8 +33,9 @@ class ConfigParser(BaseModel):
             "updates": updates
         }
 
-    def delta_applying(self, delta_dict):
-        new_dict = self.old_struct.copy()
+    @staticmethod
+    def apply_delta_to_config(base_config, delta_dict):
+        new_dict = base_config.copy()
         for key in delta_dict.get('deletions', []):
             new_dict.pop(key, None)
         for update in delta_dict.get('updates', []):

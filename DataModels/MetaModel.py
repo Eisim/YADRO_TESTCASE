@@ -1,9 +1,5 @@
-
-from collections import deque, defaultdict
-from typing import Dict, Any
-
-import UMLDataClassModel
-from base_classes.BaseModel import BaseModel
+from DataModels import UMLDataClassModel
+from DataModels.BaseModel import BaseModel
 
 
 
@@ -12,7 +8,8 @@ class MetaModel(BaseModel):
     def __init__(self, *args, **kvargs):
         super().__init__(*args, **kvargs)
 
-    def to_format(self, content: UMLDataClassModel):
+    
+    def to_format(self, content: UMLDataClassModel.UMLDataClass):
         content = content.to_dict()
         meta_data = []
 

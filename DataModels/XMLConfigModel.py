@@ -1,10 +1,9 @@
-import dataclasses
 import xml.etree.ElementTree as ET
 from collections import defaultdict, deque
 from typing import Dict, Any
 
-import UMLDataClassModel
-from base_classes.BaseModel import BaseModel
+from DataModels.BaseModel import BaseModel
+from DataModels import UMLDataClassModel
 
 
 class XMLConfigModel(BaseModel):
@@ -19,8 +18,8 @@ class XMLConfigModel(BaseModel):
         return hierarchy
 
     def __dict_to_xml(self, content, data: Dict[str, Any], parent=None):
-        def add_additional_info(xml_elem: ET.Element, data: UMLDataClassModel):
-            for attr_list in data.attribute:
+        def add_additional_info(xml_elem: ET.Element, class_data: UMLDataClassModel.Class):
+            for attr_list in class_data.attribute:
                 elem_attrs = ET.SubElement(xml_elem, attr_list.name)
                 elem_attrs.text = attr_list.type
 
@@ -40,7 +39,7 @@ class XMLConfigModel(BaseModel):
                 if children:
                     self.__dict_to_xml(content, children, elem)
 
-    def to_format(self, content: UMLDataClassModel):
+    def to_format(self, content: UMLDataClassModel.UMLDataClass):
         root_class = next((cls for cls in content.Classes if cls.isRoot), None)
         graph = defaultdict(list)
         for aggr in content.Aggregations:

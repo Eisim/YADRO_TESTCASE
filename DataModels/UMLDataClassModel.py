@@ -1,4 +1,4 @@
-from base_classes.BaseDataClass import BaseDataClass
+from DataModels.BaseDataClass import BaseDataClass
 
 from dataclasses import dataclass
 from typing import List
@@ -26,7 +26,7 @@ class Aggregation(BaseDataClass):
 
 
 @dataclass
-class UMLStructure(BaseDataClass):
+class UMLDataClass(BaseDataClass):
     Classes: List[Class]
     Aggregations: List[Aggregation]
 

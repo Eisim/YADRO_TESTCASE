@@ -1,9 +1,8 @@
-import os
 import xml.etree.ElementTree as ET
-from typing import get_origin, get_args
+from typing import get_origin, get_args, AnyStr
 
-from UMLDataClassModel import UMLStructure
-from base_classes.BaseFileReader import BaseFileReader
+from DataModels.UMLDataClassModel import UMLDataClass
+from FileReaders.BaseFileReader import BaseFileReader
 from settings import COLLECTION_TYPES
 
 
@@ -24,8 +23,8 @@ class UMLReaderClass(BaseFileReader):
                 attr_data[attr_name] = xml_element.get(attr_name)
         return attr_data
 
-    def read(self, path: str):
+    def read(self, path: AnyStr):
         tree = ET.parse(path)
         root = tree.getroot()
-        content = UMLStructure(**self.__collect_attributes(root, UMLStructure))
+        content = UMLDataClass(**self.__collect_attributes(root, UMLDataClass))
         return content
