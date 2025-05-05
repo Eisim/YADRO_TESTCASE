@@ -15,7 +15,8 @@ class Class(BaseDataClass):
     isRoot: bool
     documentation: str
     attribute: List[Attribute]
-
+    def __post_init__(self):
+        self.isRoot = bool(self.isRoot)
 
 @dataclass
 class Aggregation(BaseDataClass):
